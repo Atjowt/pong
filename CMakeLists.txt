@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.0.0)
+project(pong VERSION 0.1.0 LANGUAGES C)
+set(CMAKE_C_STANDARD 99)
+add_executable(pong)
+target_sources(pong PRIVATE main.c util.c renderer.c game.c)
+find_package(glfw3 REQUIRED)
+target_link_libraries(pong PRIVATE glad glfw ${CMAKE_DL_LIBS} ${OPENGL_LIBRARIES})
