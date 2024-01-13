@@ -7,16 +7,21 @@
 #define PADDLE_WIDTH 16
 #define PADDLE_HEIGHT 72
 
-#define PADDLE_SPEED 196
+#define PADDLE_SPEED 256
 #define BALL_SPEED 256
+
+#define BALL_BOUNCE 1.04f
+#define BALL_RANDOM 0.1f
+#define BALL_INFLUENCE 0.3f
 
 #define BALL_SIZE 16
 
-#define WALL_OFFSET 32
+#define WALL_OFFSET 0
 
 typedef struct Paddle {
     Rectangle rect;
     int dir;
+    int score;
 } Paddle;
 
 typedef struct Ball {
@@ -31,6 +36,7 @@ void initPaddle(Paddle* p, float x);
 void initBall(Ball* b);
 void movePaddle(Paddle* p, float dt);
 void moveBall(Ball* b, float dt);
+void collideBallPaddle(Ball* b, const Paddle* p, int forward);
 
 void gameInit(void) {
     initPaddle(&p1, -GAME_WIDTH * 0.5f + 0.5f * PADDLE_WIDTH + WALL_OFFSET);
@@ -44,6 +50,8 @@ void gameUpdate(float dt) {
     movePaddle(&p1, dt);
     movePaddle(&p2, dt);
     moveBall(&ball, dt);
+    collideBallPaddle(&ball, &p1, -1);
+    collideBallPaddle(&ball, &p2, 1);
 }
 
 void gameDraw(void) {
@@ -58,7 +66,8 @@ void initPaddle(Paddle* p, float x) {
             .x = x, .y = 0.0f,
             .width = PADDLE_WIDTH, .height = PADDLE_HEIGHT
         },
-        .dir = 0
+        .dir = 0,
+        .score = 0
     };
 }
 
@@ -95,13 +104,13 @@ void moveBall(Ball* b, float dt) {
     static float maxY = GAME_HEIGHT * 0.5f - BALL_SIZE * 0.5f;
 
     if (ball.rect.x < minX) {
-        ball.rect.x = minX;
-        ball.dx = -ball.dx;
+        p2.score++;
+        initBall(b);
     }
 
     if (ball.rect.x > maxX) {
-        ball.rect.x = maxX;
-        ball.dx = -ball.dx;
+        p1.score++;
+        initBall(b);
     }
 
     if (ball.rect.y < minY) {
@@ -112,5 +121,27 @@ void moveBall(Ball* b, float dt) {
     if (ball.rect.y > maxY) {
         ball.rect.y = maxY;
         ball.dy = -ball.dy;
+    }
+}
+
+void collideBallPaddle(Ball* b, const Paddle* p, int forward) {
+
+    float bFront = b->rect.x + forward * b->rect.width * 0.5f;
+    float bBack = b->rect.x - forward * b->rect.width * 0.5f;
+    float bTop = b->rect.y + b->rect.height * 0.5f;
+    float bBottom = b->rect.y - b->rect.height * 0.5f;
+
+    float pFront = p->rect.x - forward * p->rect.width * 0.5f;
+    float pBack = p->rect.x + forward * p->rect.width * 0.5f;
+    float pTop = p->rect.y + p->rect.height * 0.5f;
+    float pBottom = p->rect.y - p->rect.height * 0.5f;
+
+    if (bBottom < pTop && bTop > pBottom) {
+        if (bFront * forward > pFront * forward) {
+            b->rect.x += pFront - bFront;
+            b->dx *= -BALL_BOUNCE;
+            b->dy += lerp(-BALL_RANDOM, BALL_RANDOM, rand01());
+            b->dy += BALL_INFLUENCE * p->dir;
+        }
     }
 }
