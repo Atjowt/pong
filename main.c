@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <glad.h>
+#include <glad/glad.h>
 #include <time.h>
 #include <GLFW/glfw3.h>
 
